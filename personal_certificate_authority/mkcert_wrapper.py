@@ -62,17 +62,24 @@ def is_root_ca_present(settings: Settings) -> bool:
     return cert_file.exists() and key_file.exists()
 
 
-def init(settings: Settings, force: bool = False) -> None:
+def init(settings: Settings, force: bool = False, system_trust: bool = False) -> None:
     """Create (if absent) and install the root CA under our pinned CAROOT.
 
     mkcert's `-install` both generates the root CA under CAROOT if one
-    doesn't exist yet, and installs it into whatever local trust stores it
-    can reach on this host (system store, Firefox/Chrome NSS db). The
-    system-trust-store step commonly requires `sudo`, which isn't available
-    non-interactively on a shared/headless host (e.g. an HPC node) — in that
-    case we fall back to NSS-only (browser) trust so the CA still gets
-    created and usable, and point the user at `pca trust`/`pca serve` for
-    manual system-wide installation.
+    doesn't exist yet, and installs it into local trust stores. Which
+    stores it touches is controlled by `system_trust`:
+
+    - `system_trust=False` (the default): installs into browser (NSS)
+      trust stores only. mkcert's system-trust-store step commonly invokes
+      `sudo` itself, which we don't want to do without the caller explicitly
+      asking for it — a `pca init` run should never silently prompt for (or
+      attempt) a password. Run `pca trust`/`pca serve` for manual
+      system-wide install instructions instead.
+    - `system_trust=True`: lets mkcert autodetect and install into every
+      trust store it can reach, including the system store (which may
+      invoke `sudo` and prompt for a password, or fail outright on a host
+      with no interactive sudo session — e.g. an HPC compute node). Falls
+      back to NSS-only if that fails, same as the default path.
     """
     if force and is_root_ca_present(settings):
         logger.warning(
@@ -85,6 +92,22 @@ def init(settings: Settings, force: bool = False) -> None:
         cert_file, key_file = store.root_ca_paths(settings)
         cert_file.unlink(missing_ok=True)
         key_file.unlink(missing_ok=True)
+
+    if not system_trust:
+        try:
+            _run(settings, ["-install"], extra_env={"TRUST_STORES": "nss"})
+        except MkcertError as exc:
+            if not is_root_ca_present(settings):
+                raise
+            logger.warning(
+                "The root CA was created, but installing it into the "
+                "browser (NSS) trust store failed, likely because "
+                "'certutil' isn't installed:\n{}\n"
+                "The CA was still created and can issue certificates; "
+                "run `pca trust` for manual install instructions.",
+                exc.stderr or exc.stdout,
+            )
+        return
 
     try:
         _run(settings, ["-install"])

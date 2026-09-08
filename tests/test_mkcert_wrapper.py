@@ -45,3 +45,41 @@ def test_issue_reissues_with_force(initialized_settings: Settings):
 def test_issue_without_root_ca_raises(settings: Settings):
     with pytest.raises(RuntimeError, match="No root CA found"):
         mkcert_wrapper.issue(settings, "test", ["localhost"])
+
+
+def _stub_mkcert_recording_trust_stores(tmp_path):
+    """A fake `mkcert` that records the TRUST_STORES env var it was called
+    with (on `-install`) and creates a root CA, without touching any real
+    trust store or invoking sudo."""
+    record_file = tmp_path / "trust_stores.txt"
+    stub = tmp_path / "mkcert"
+    stub.write_text(
+        "#!/usr/bin/env bash\n"
+        "if [[ \"$1\" == \"-install\" ]]; then\n"
+        f'  echo "${{TRUST_STORES:-<unset>}}" > "{record_file}"\n'
+        '  mkdir -p "$CAROOT"\n'
+        '  touch "$CAROOT/rootCA.pem" "$CAROOT/rootCA-key.pem"\n'
+        "  exit 0\n"
+        "fi\n"
+        "exit 1\n"
+    )
+    stub.chmod(0o755)
+    return stub, record_file
+
+
+def test_init_default_never_touches_system_trust_store(settings: Settings, tmp_path):
+    stub, record_file = _stub_mkcert_recording_trust_stores(tmp_path)
+    settings.mkcert_binary = str(stub)
+
+    mkcert_wrapper.init(settings)
+
+    assert record_file.read_text().strip() == "nss"
+
+
+def test_init_system_trust_lets_mkcert_autodetect(settings: Settings, tmp_path):
+    stub, record_file = _stub_mkcert_recording_trust_stores(tmp_path)
+    settings.mkcert_binary = str(stub)
+
+    mkcert_wrapper.init(settings, system_trust=True)
+
+    assert record_file.read_text().strip() == "<unset>"

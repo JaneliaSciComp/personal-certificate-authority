@@ -21,12 +21,15 @@ cert renewed automatically without any separate cron/reminder logic.
 
 Someone (a person, or the first app/agent to need TLS) must have run `pca
 init` once on the host. This creates the root CA under
-`~/.local/share/personal-certificate-authority/mkcert/` and installs it into
-whatever local trust stores `mkcert` can reach (system store, Firefox/Chrome
-NSS db). If the host is headless/remote and `sudo` isn't available, `pca
-init` still creates a working CA — it just can't fully self-install trust,
-so also run `pca trust` (or visit `pca serve`) once from a real browser
-session to finish trusting it there. See the main [README](../README.md).
+`~/.local/share/personal-certificate-authority/mkcert/` and, by default,
+installs it into the local browser (NSS) trust store only — `pca init`
+never invokes `sudo` on its own. Installing into the OS-wide system trust
+store requires explicitly passing `pca init --system-trust`, since that
+step is what actually needs `sudo` (and may prompt for a password, or fail
+outright on a host with no interactive sudo session, e.g. an HPC compute
+node). Either way, also run `pca trust` (or visit `pca serve`) once from a
+real browser session on any *other* machine that needs to trust it. See the
+main [README](../README.md).
 
 All state lives under one directory, `$XDG_DATA_HOME/personal-certificate-authority`
 (default `~/.local/share/personal-certificate-authority`), which on Janelia's

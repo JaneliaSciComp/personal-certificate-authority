@@ -21,6 +21,12 @@ This project adds:
   first visit if one doesn't exist yet, so `pca serve` alone is enough to
   get started — no separate `pca init` required first.
 
+By default, `pca init` (whether run directly or triggered automatically by
+`pca serve`) only installs the root CA into the browser (NSS) trust store —
+it never invokes `sudo`. Installing into the OS-wide system trust store is
+opt-in via `pca init --system-trust`, since that's the step that actually
+needs `sudo` and may prompt for a password.
+
 ## Quick start
 
 ```bash
@@ -38,7 +44,7 @@ Point any app's `--ssl-keyfile`/`--ssl-certfile` flags (e.g. Fileglancer's
 
 | Command | Description |
 |---|---|
-| `pca init [--force]` | Create and install the root CA |
+| `pca init [--force] [--system-trust]` | Create and install the root CA (browser/NSS trust only, unless `--system-trust`) |
 | `pca issue --name NAME [--san SAN ...] [--force]` | Issue or reuse a server certificate |
 | `pca renew --name NAME` | Reissue an existing certificate |
 | `pca list` | List issued certificates |

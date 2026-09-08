@@ -1,3 +1,6 @@
+import shutil
+
+import pytest
 from click.testing import CliRunner
 
 from personal_certificate_authority.cli import cli
@@ -19,6 +22,16 @@ def test_status_before_init(settings: Settings):
     result = _invoke(runner, settings, ["status"])
     assert result.exit_code == 0
     assert "not initialized" in result.output
+
+
+def test_init_defaults_to_nss_only_and_says_so(settings: Settings):
+    if shutil.which("mkcert") is None:
+        pytest.skip("mkcert binary not available on PATH")
+    runner = CliRunner()
+    result = _invoke(runner, settings, ["init"])
+    assert result.exit_code == 0, result.output
+    assert "browser (NSS) only" in result.output
+    assert "--system-trust" in result.output
 
 
 def test_init_then_issue_then_list_then_show(initialized_settings: Settings):

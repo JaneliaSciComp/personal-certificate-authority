@@ -25,8 +25,12 @@
   <div class="banner">
     A root CA didn't exist yet, so one was just created for you (equivalent
     to running <code>pca init</code>). It's already installed in this
-    machine's local trust store(s) where possible &mdash; the steps below
-    are only needed to trust it on a <em>different</em> machine.
+    machine's browser (NSS) trust store where possible. It was
+    <strong>not</strong> installed into the OS-wide system trust store
+    automatically &mdash; that step can invoke <code>sudo</code>, which this
+    page won't do on your behalf; run <code>pca init --system-trust</code>
+    from a terminal on this machine if you want that too. The steps below
+    cover both that case and trusting it on a <em>different</em> machine.
   </div>
   {% endif %}
 

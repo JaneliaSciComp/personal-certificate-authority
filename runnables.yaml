@@ -22,7 +22,8 @@ runnables:
     description: >
       Create (if needed) and install the personal root CA. Safe to run
       again; use "Force" to regenerate and invalidate previously issued
-      certificates.
+      certificates. By default only installs into the browser (NSS) trust
+      store -- never invokes sudo.
     command: pixi run pca init
     parameters:
       - flag: --force
@@ -30,6 +31,14 @@ runnables:
         type: boolean
         default: false
         description: Regenerate the root CA, invalidating all issued certificates.
+      - flag: --system-trust
+        name: System Trust
+        type: boolean
+        default: false
+        description: >
+          Also install into the OS-wide system trust store (may invoke
+          sudo and prompt for a password, or fail on a host with no
+          interactive sudo session -- e.g. most compute nodes).
 
   - id: issue
     name: Issue Certificate

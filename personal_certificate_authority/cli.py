@@ -11,10 +11,14 @@ TRUST_INSTRUCTIONS = """\
 Root CA certificate: {cert_file}
 
 If you're browsing from this same machine, `pca init` already installed the
-CA into the local system/browser trust stores via `mkcert -install`.
+CA into your browser's (NSS) trust store. It deliberately does *not* touch
+the OS-wide system trust store unless you pass `--system-trust` (that step
+can invoke `sudo`, which `pca init` won't do without being asked) -- run
+`pca init --system-trust` if you want that too.
 
 If you're browsing from a *different* machine (e.g. this is running on a
-remote host), download the certificate above and trust it manually:
+remote host), or want OS-wide (not just browser) trust on this one, install
+the certificate above manually:
 
   Windows:  Double-click the .pem/.crt file -> Install Certificate ->
             Local Machine -> Trusted Root Certification Authorities.
@@ -46,16 +50,32 @@ def cli(log_level: str | None):
 
 @cli.command()
 @click.option("--force", is_flag=True, help="Regenerate the root CA, invalidating all issued certs.")
-def init(force: bool):
-    """Create (if needed) and install the personal root CA."""
+@click.option(
+    "--system-trust",
+    is_flag=True,
+    help=(
+        "Also install into the OS-wide system trust store, not just the "
+        "browser (NSS) one. This may invoke sudo and prompt for a "
+        "password (or fail on a host with no interactive sudo session); "
+        "omit this flag to skip it entirely."
+    ),
+)
+def init(force: bool, system_trust: bool):
+    """Create (if needed) and install the personal root CA.
+
+    By default, only installs into browser (NSS) trust stores -- never
+    invokes sudo. Pass --system-trust to also attempt OS-wide trust.
+    """
     settings = get_settings()
-    mkcert_wrapper.init(settings, force=force)
+    mkcert_wrapper.init(settings, force=force, system_trust=system_trust)
     cert_file, _ = store.root_ca_paths(settings)
     info = certinfo.read_cert(cert_file)
     click.echo(f"Root CA ready: {cert_file}")
     click.echo(f"  Common name: {info.common_name}")
     click.echo(f"  Fingerprint: {info.sha256_fingerprint}")
     click.echo(f"  Valid until: {info.not_valid_after.isoformat()}")
+    if not system_trust:
+        click.echo("  Trust installed: browser (NSS) only. Run `pca init --system-trust` for OS-wide trust too.")
 
 
 @cli.command()
