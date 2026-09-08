@@ -16,6 +16,7 @@
     pre { background: #1e1e1e; color: #eee; padding: 0.75rem; border-radius: 6px; overflow-x: auto; }
     code { font-family: monospace; }
     .banner { border: 1px solid #86efac; background: #f0fdf4; color: #14532d; border-radius: 6px; padding: 0.6rem 1rem; margin-bottom: 1.5rem; }
+    .banner.warn { border-color: #fcd34d; background: #fffbeb; color: #78350f; }
   </style>
 </head>
 <body>
@@ -31,6 +32,19 @@
     page won't do on your behalf; run <code>pca init --system-trust</code>
     from a terminal on this machine if you want that too. The steps below
     cover both that case and trusting it on a <em>different</em> machine.
+  </div>
+  {% endif %}
+
+  {% if not pca_on_path %}
+  <div class="banner warn">
+    The <code>pca</code> command isn't on <code>PATH</code> on this machine
+    (it's only reachable through this web app, e.g. via <code>pixi run
+    pca</code>). To run <code>pca issue</code>/<code>pca status</code>/etc.
+    directly from a terminal or from another app's startup script, install it
+    globally with pixi:
+    <pre>pixi global install --git https://github.com/JaneliaSciComp/personal-certificate-authority</pre>
+    or, from a local clone: <code>pixi global install --path /path/to/personal-certificate-authority</code>.
+    See <code>docs/Integration.md</code> for details.
   </div>
   {% endif %}
 

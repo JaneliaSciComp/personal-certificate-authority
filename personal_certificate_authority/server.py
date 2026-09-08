@@ -1,3 +1,4 @@
+import shutil
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
@@ -48,6 +49,7 @@ def create_app() -> FastAPI:
                 "fingerprint": info.sha256_fingerprint,
                 "not_valid_after": info.not_valid_after.isoformat(),
                 "just_initialized": just_initialized,
+                "pca_on_path": shutil.which("pca") is not None,
             },
         )
 

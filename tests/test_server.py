@@ -44,6 +44,22 @@ def test_index_500_when_mkcert_missing(settings: Settings):
     assert "mkcert" in response.text
 
 
+def test_index_warns_when_pca_not_on_path(initialized_settings: Settings, monkeypatch):
+    monkeypatch.setattr(shutil, "which", lambda name: None if name == "pca" else "/usr/bin/" + name)
+    client = _client_with(initialized_settings)
+    response = client.get("/")
+    assert response.status_code == 200
+    assert "pixi global install" in response.text
+
+
+def test_index_no_warning_when_pca_on_path(initialized_settings: Settings, monkeypatch):
+    monkeypatch.setattr(shutil, "which", lambda name: "/usr/bin/" + name)
+    client = _client_with(initialized_settings)
+    response = client.get("/")
+    assert response.status_code == 200
+    assert "pixi global install" not in response.text
+
+
 def test_download_root_ca(initialized_settings: Settings):
     client = _client_with(initialized_settings)
     response = client.get("/download/rootCA.pem")
