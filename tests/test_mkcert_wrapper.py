@@ -1,8 +1,9 @@
+import shutil
 import stat
 
 import pytest
 
-from personal_certificate_authority import mkcert_wrapper, store
+from personal_certificate_authority import certinfo, mkcert_wrapper, store
 from personal_certificate_authority.settings import Settings
 
 
@@ -16,6 +17,32 @@ def test_init_creates_root_ca(initialized_settings: Settings):
     cert_file, key_file = store.root_ca_paths(initialized_settings)
     assert cert_file.exists()
     assert key_file.exists()
+
+
+def test_init_uses_resolved_common_name_not_mkcerts_default(settings: Settings):
+    if shutil.which("mkcert") is None:
+        pytest.skip("mkcert binary not available on PATH")
+    settings.root_ca_common_name = "custom-ca@example.org"
+
+    mkcert_wrapper.init(settings)
+
+    cert_file, _ = store.root_ca_paths(settings)
+    info = certinfo.read_cert(cert_file)
+    assert info.common_name == "custom-ca@example.org"
+
+
+def test_init_does_not_overwrite_an_existing_root_ca_common_name(settings: Settings):
+    if shutil.which("mkcert") is None:
+        pytest.skip("mkcert binary not available on PATH")
+    settings.root_ca_common_name = "first@example.org"
+    mkcert_wrapper.init(settings)
+
+    settings.root_ca_common_name = "second@example.org"
+    mkcert_wrapper.init(settings)  # no force -- should be a no-op on the existing CA
+
+    cert_file, _ = store.root_ca_paths(settings)
+    info = certinfo.read_cert(cert_file)
+    assert info.common_name == "first@example.org"
 
 
 def test_issue_creates_leaf_cert_with_correct_permissions(initialized_settings: Settings):

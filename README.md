@@ -61,6 +61,27 @@ Settings can be set via environment variables prefixed `PCA_` (e.g.
 `PCA_WEB_PORT=9000`) or via `~/.config/personal-certificate-authority/config.yaml`
 — see `config.yaml.template`.
 
+The root CA's identity (its Subject/Issuer CommonName) defaults to `git
+config user.email`, then `$EMAIL`, then `<user>@<hostname>` — set
+`PCA_ROOT_CA_COMMON_NAME` (or pass `pca init --common-name ...`) to override
+it explicitly. This only takes effect the first time the CA is created (or
+alongside `--force`); mkcert itself has no way to set this, so
+`personal_certificate_authority.ca` generates just the root CA and hands it
+to mkcert to install/manage from there.
+
+## Security / permissions
+
+Everything under `$XDG_DATA_HOME/personal-certificate-authority` (default
+`~/.local/share/personal-certificate-authority`) — the directory itself,
+`mkcert/`, and every `certs/<name>/` — is `0700`: only the owning user can
+even list what's in there, not just read file contents. Private keys are
+`0400` for the root CA and `0600` for issued leaf certs (matching what
+mkcert itself uses); public certs are `0644`. This is enforced (and
+self-healed on an already-existing, more permissive directory) every time
+`pca init`/`issue` runs — worth knowing if you're auditing an install:
+`stat -c '%a %n' ~/.local/share/personal-certificate-authority` and its
+subdirectories should always read back `700`.
+
 ## Fileglancer App
 
 This repo ships a [`runnables.yaml`](runnables.yaml) so it can be added to
