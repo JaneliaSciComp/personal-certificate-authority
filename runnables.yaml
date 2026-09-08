@@ -108,6 +108,25 @@ runnables:
         required: true
         description: Name of the certificate to delete.
 
+  - id: uninstall
+    name: Uninstall Root CA Trust
+    type: job
+    description: >
+      Remove the root CA from this host's local trust store(s). Does not
+      delete the CA or any issued certificates -- they still exist, they
+      just stop being trusted here. Only reaches the browser (NSS) trust
+      store unless "System Trust" is set.
+    command: pixi run pca uninstall
+    parameters:
+      - flag: --system-trust
+        name: System Trust
+        type: boolean
+        default: false
+        description: >
+          Also remove it from the OS-wide system trust store (may invoke
+          sudo and prompt for a password, or fail on a host with no
+          interactive sudo session -- e.g. most compute nodes).
+
   - id: trust
     name: Trust Instructions
     type: job

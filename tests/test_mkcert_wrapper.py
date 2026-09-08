@@ -49,8 +49,8 @@ def test_issue_without_root_ca_raises(settings: Settings):
 
 def _stub_mkcert_recording_trust_stores(tmp_path):
     """A fake `mkcert` that records the TRUST_STORES env var it was called
-    with (on `-install`) and creates a root CA, without touching any real
-    trust store or invoking sudo."""
+    with (on `-install`/`-uninstall`) and creates a root CA on `-install`,
+    without touching any real trust store or invoking sudo."""
     record_file = tmp_path / "trust_stores.txt"
     stub = tmp_path / "mkcert"
     stub.write_text(
@@ -59,6 +59,10 @@ def _stub_mkcert_recording_trust_stores(tmp_path):
         f'  echo "${{TRUST_STORES:-<unset>}}" > "{record_file}"\n'
         '  mkdir -p "$CAROOT"\n'
         '  touch "$CAROOT/rootCA.pem" "$CAROOT/rootCA-key.pem"\n'
+        "  exit 0\n"
+        "fi\n"
+        "if [[ \"$1\" == \"-uninstall\" ]]; then\n"
+        f'  echo "${{TRUST_STORES:-<unset>}}" > "{record_file}"\n'
         "  exit 0\n"
         "fi\n"
         "exit 1\n"
@@ -83,3 +87,30 @@ def test_init_system_trust_lets_mkcert_autodetect(settings: Settings, tmp_path):
     mkcert_wrapper.init(settings, system_trust=True)
 
     assert record_file.read_text().strip() == "<unset>"
+
+
+def test_uninstall_default_never_touches_system_trust_store(settings: Settings, tmp_path):
+    stub, record_file = _stub_mkcert_recording_trust_stores(tmp_path)
+    settings.mkcert_binary = str(stub)
+    mkcert_wrapper.init(settings)
+
+    mkcert_wrapper.uninstall(settings)
+
+    assert record_file.read_text().strip() == "nss"
+
+
+def test_uninstall_system_trust_lets_mkcert_autodetect(settings: Settings, tmp_path):
+    stub, record_file = _stub_mkcert_recording_trust_stores(tmp_path)
+    settings.mkcert_binary = str(stub)
+    mkcert_wrapper.init(settings)
+
+    mkcert_wrapper.uninstall(settings, system_trust=True)
+
+    assert record_file.read_text().strip() == "<unset>"
+
+
+def test_uninstall_noop_when_no_root_ca(settings: Settings):
+    # Should not raise even though the stub binary doesn't exist -- there's
+    # nothing to uninstall, so mkcert should never be invoked at all.
+    settings.mkcert_binary = "definitely-not-a-real-binary"
+    mkcert_wrapper.uninstall(settings)

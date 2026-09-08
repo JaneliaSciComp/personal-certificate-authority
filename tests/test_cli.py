@@ -62,3 +62,21 @@ def test_revoke_deletes_cert(initialized_settings: Settings):
 
     result = _invoke(runner, initialized_settings, ["show", "--name", "test"])
     assert result.exit_code != 0
+
+
+def test_uninstall_without_root_ca_fails(settings: Settings):
+    runner = CliRunner()
+    result = _invoke(runner, settings, ["uninstall"])
+    assert result.exit_code != 0
+
+
+def test_uninstall_after_init(initialized_settings: Settings):
+    runner = CliRunner()
+    result = _invoke(runner, initialized_settings, ["uninstall"])
+    assert result.exit_code == 0, result.output
+    assert "browser (NSS)" in result.output
+
+    # The CA and any issued certs still exist afterward.
+    result = _invoke(runner, initialized_settings, ["status"])
+    assert result.exit_code == 0
+    assert "not initialized" not in result.output

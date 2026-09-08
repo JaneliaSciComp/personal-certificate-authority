@@ -87,5 +87,48 @@ sudo update-ca-certificates</pre>
 export REQUESTS_CA_BUNDLE=/path/to/rootCA.pem
 export NODE_EXTRA_CA_CERTS=/path/to/rootCA.pem</pre>
   </details>
+
+  <h2>Uninstalling</h2>
+
+  <p>
+    If you decommission a machine, or no longer want this CA trusted
+    somewhere, reverse whichever of the steps above you did. This doesn't
+    delete any certificates already issued by the CA &mdash; they still
+    exist, they just stop being trusted once the CA itself is removed.
+  </p>
+
+  <details open>
+    <summary>Same machine (this one)</summary>
+    <pre>pca uninstall</pre>
+    <p>Add <code>--system-trust</code> too if you'd installed that with
+    <code>pca init --system-trust</code>.</p>
+  </details>
+
+  <details>
+    <summary>Windows</summary>
+    <p>Open "Manage Computer Certificates", find the CA under "Trusted Root
+    Certification Authorities", right-click it, and choose "Delete".</p>
+  </details>
+
+  <details>
+    <summary>macOS</summary>
+    <p>Open Keychain Access, find the CA (search for its common name),
+    right-click it, and choose "Delete".</p>
+  </details>
+
+  <details>
+    <summary>Linux (system-wide)</summary>
+    <pre>sudo rm /etc/pki/ca-trust/source/anchors/personal-ca.pem
+sudo update-ca-trust extract
+
+# Debian/Ubuntu instead:
+sudo rm /usr/local/share/ca-certificates/personal-ca.crt
+sudo update-ca-certificates --fresh</pre>
+  </details>
+
+  <details>
+    <summary>Firefox / Chrome (Linux, NSS database)</summary>
+    <pre>certutil -d sql:$HOME/.pki/nssdb -D -n "Personal CA"</pre>
+  </details>
 </body>
 </html>

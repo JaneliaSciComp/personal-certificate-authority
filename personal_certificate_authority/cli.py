@@ -33,6 +33,24 @@ the certificate above manually:
   Chrome        -n "Personal CA" -i rootCA.pem
   (Linux, NSS db; requires the `certutil` tool from libnss3-tools/nss-tools)
 
+Uninstalling (e.g. decommissioning a machine, or you no longer want this CA
+trusted):
+
+  Same machine:  pca uninstall (add --system-trust to also remove it from
+                 the OS-wide system trust store, if you'd installed that).
+  Windows:       Manage Computer Certificates -> Trusted Root Certification
+                 Authorities -> find the CA -> Delete.
+  macOS:         Keychain Access -> find the CA -> right-click -> Delete.
+  Linux:         sudo rm /etc/pki/ca-trust/source/anchors/personal-ca.pem
+                 sudo update-ca-trust extract
+                 (Debian/Ubuntu: rm the file from
+                  /usr/local/share/ca-certificates/ and run
+                  `sudo update-ca-certificates --fresh` instead)
+  Firefox/       certutil -d sql:$HOME/.pki/nssdb -D -n "Personal CA"
+  Chrome
+  This does not delete any certificates already issued by the CA -- they
+  still exist, they just stop being trusted once the CA itself is removed.
+
 Or run `pca serve` for a web page with a download button and these same
 instructions.
 """
@@ -152,6 +170,35 @@ def revoke(name: str):
         f.unlink()
     cert_dir.rmdir()
     click.echo(f"Deleted certificate files for '{name}'. This does not revoke trust; regenerate the root CA (`pca init --force`) if a key was compromised.")
+
+
+@cli.command()
+@click.option(
+    "--system-trust",
+    is_flag=True,
+    help=(
+        "Also remove it from the OS-wide system trust store, not just the "
+        "browser (NSS) one. This may invoke sudo and prompt for a "
+        "password; omit this flag to skip it entirely."
+    ),
+)
+def uninstall(system_trust: bool):
+    """Remove the root CA from this machine's local trust store(s).
+
+    Only reverses the trust-store install (same NSS-only-by-default,
+    --system-trust-to-opt-in behavior as `pca init`) -- does not delete the
+    root CA files or any issued certificates. Certificates issued by this
+    CA still exist afterward, they just stop being trusted here.
+    """
+    settings = get_settings()
+    cert_file, _ = store.root_ca_paths(settings)
+    if not cert_file.exists():
+        click.echo("No root CA found; nothing to uninstall.", err=True)
+        sys.exit(1)
+    mkcert_wrapper.uninstall(settings, system_trust=system_trust)
+    scope = "system and browser (NSS)" if system_trust else "browser (NSS)"
+    click.echo(f"Removed the root CA from this machine's {scope} trust store(s).")
+    click.echo("The CA and any issued certificates still exist; run `pca init` to re-install trust.")
 
 
 @cli.command()

@@ -88,7 +88,7 @@ def init(settings: Settings, force: bool = False, system_trust: bool = False) ->
             "(on this host or any other machine that trusted the old "
             "rootCA.pem)."
         )
-        uninstall(settings)
+        uninstall(settings, system_trust=system_trust)
         cert_file, key_file = store.root_ca_paths(settings)
         cert_file.unlink(missing_ok=True)
         key_file.unlink(missing_ok=True)
@@ -134,11 +134,48 @@ def init(settings: Settings, force: bool = False, system_trust: bool = False) ->
             )
 
 
-def uninstall(settings: Settings) -> None:
-    """Best-effort removal from local trust stores on this host only."""
+def uninstall(settings: Settings, system_trust: bool = False) -> None:
+    """Best-effort removal from local trust stores on this host only.
+
+    Does not delete the root CA files themselves (see `pca init --force`
+    or delete the data directory for that) -- just reverses the
+    trust-store install. Same `system_trust` gating as `init`: by default
+    only removes it from the browser (NSS) trust store, since mkcert's
+    system-trust-store removal step also shells out to `sudo` (verified:
+    it invokes `sudo rm` and fails the same way `-install` does without an
+    interactive session). Pass `system_trust=True` to also attempt
+    removing it from the OS-wide system trust store.
+    """
     if not is_root_ca_present(settings):
         return
-    _run(settings, ["-uninstall"])
+
+    if not system_trust:
+        try:
+            _run(settings, ["-uninstall"], extra_env={"TRUST_STORES": "nss"})
+        except MkcertError as exc:
+            logger.warning(
+                "Removing the CA from the browser (NSS) trust store "
+                "failed, likely because 'certutil' isn't installed:\n{}",
+                exc.stderr or exc.stdout,
+            )
+        return
+
+    try:
+        _run(settings, ["-uninstall"])
+    except MkcertError as exc:
+        logger.warning(
+            "Removing the CA from the system trust store failed (likely "
+            "needs 'sudo' privileges this process doesn't have):\n{}\n"
+            "Retrying browser-only (NSS) removal.",
+            exc.stderr or exc.stdout,
+        )
+        try:
+            _run(settings, ["-uninstall"], extra_env={"TRUST_STORES": "nss"})
+        except MkcertError as nss_exc:
+            logger.warning(
+                "Browser (NSS) removal also failed:\n{}",
+                nss_exc.stderr or nss_exc.stdout,
+            )
 
 
 def issue(settings: Settings, name: str, sans: Sequence[str], force: bool = False) -> tuple[Path, Path]:

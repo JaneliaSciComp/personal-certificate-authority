@@ -50,7 +50,8 @@ Point any app's `--ssl-keyfile`/`--ssl-certfile` flags (e.g. Fileglancer's
 | `pca list` | List issued certificates |
 | `pca show --name NAME` | Show details about one certificate |
 | `pca revoke --name NAME` | Delete a certificate's files |
-| `pca trust` | Print instructions for trusting the CA on another machine |
+| `pca uninstall [--system-trust]` | Remove the root CA from this host's trust store(s) |
+| `pca trust` | Print instructions for trusting (and uninstalling) the CA |
 | `pca serve [--host] [--port]` | Start the download + trust-instructions web app |
 | `pca status` | Show root CA and certificate inventory status |
 
