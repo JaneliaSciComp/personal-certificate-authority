@@ -46,6 +46,42 @@ packages = ["personal_certificate_authority"]
 [tool.pixi.workspace]
 channels = ["conda-forge"]
 platforms = ["osx-arm64", "osx-64", "linux-64", "linux-aarch64"]
+preview = ["pixi-build"]
+
+# Makes this repo installable with `pixi global install --path .` (or
+# `--git https://github.com/JaneliaSciComp/personal-certificate-authority`),
+# so `pca` (and its `mkcert` binary dependency) can be put on PATH without a
+# separate wrapper script -- see docs/Integration.md, "Getting pca itself
+# onto PATH". This builds a real (local, unpublished) conda package via
+# pixi-build-python; it's independent of the pip/hatchling build above,
+# which still governs the wheel used by `pixi run` and any plain
+# `pip install`.
+[tool.pixi.package]
+name = "personal-certificate-authority"
+version = "0.1.0"
+
+[tool.pixi.package.build]
+backend = { name = "pixi-build-python", version = "*", channels = ["https://prefix.dev/conda-forge"] }
+
+[tool.pixi.package.host-dependencies]
+hatchling = "*"
+
+# Mirrors [project.dependencies] above plus the mkcert binary: pixi-build-python
+# only infers PyPI build metadata from pyproject.toml, not conda run-time
+# dependencies, so these need to be declared explicitly for the built
+# package to be usable standalone (verified: omitting them installs `pca`
+# but it fails at runtime with `ModuleNotFoundError`).
+[tool.pixi.package.run-dependencies]
+python = ">=3.12.0"
+mkcert = ">=1.4.4,<2"
+click = ">=8.0,<9"
+cryptography = ">=48.0.0,<49"
+fastapi = ">=0.136.3,<0.137"
+jinja2 = ">=3.1,<4"
+loguru = ">=0.7.3,<0.8"
+pydantic = ">=2.10.6,<3"
+pydantic-settings = ">=2.11.0,<3"
+uvicorn = ">=0.38.0,<0.39"
 
 [tool.pixi.dependencies]
 python = ">=3.12.0"

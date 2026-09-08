@@ -112,3 +112,15 @@ runnables:
     type: job
     description: Show root CA status and a summary of issued certificates.
     command: pixi run pca status
+
+  - id: install-global
+    name: Install pca Globally
+    type: job
+    description: >
+      Install pca (and mkcert) into your global pixi environment via
+      `pixi global install`, so other apps/scripts can find `pca` on PATH
+      without going through this repo -- e.g. for the "if pca is on PATH,
+      use it" integrations documented in this project's Integration.md and
+      CaddyIntegration.md. Safe to re-run; only needs to be done once per
+      account, since $HOME (and so ~/.pixi) is shared across compute nodes.
+    command: pixi global install --path .

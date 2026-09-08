@@ -36,20 +36,31 @@ named job runs on a different node later.
 
 ### Getting `pca` itself onto `PATH`
 
-This project isn't published to PyPI or conda-forge, and `pixi global
-install --path`/`--git` doesn't work against it as-is — that command needs a
-project built with pixi's newer package/build system (a `[tool.pixi.package]`
-section plus a pixi-build backend), and this repo is a plain
-hatchling/pip-installable package instead (verified directly: `pixi global
-install --path <this-repo>` fails with "the pyproject.toml does not describe
-a package"). A plain `pip install`/`pipx install` of this repo does work, but
-requires Python ≥3.12 as the interpreter doing the installing, which isn't
-the system default on every host.
+This project isn't published to PyPI or conda-forge, but it can still be
+installed globally with:
 
-The simplest thing that works today without any of that — and what makes
-`command -v pca` succeed for the "when available" integrations below — is a
-one-line wrapper script on `PATH` that delegates to `pixi run
---manifest-path` against a clone of this repo, e.g.:
+```bash
+pixi global install --git https://github.com/JaneliaSciComp/personal-certificate-authority
+# or, from a local clone:
+pixi global install --path ~/src/personal-certificate-authority
+```
+
+This builds a real (local, unpublished) conda package via
+[`pixi-build-python`](https://pixi.prefix.dev/latest/build/backends/pixi-build-python/)
+— an opt-in preview feature (`preview = ["pixi-build"]` in
+`[tool.pixi.workspace]`), which is why this needed a dedicated
+`[tool.pixi.package]` section rather than working automatically off the
+plain hatchling/pip packaging above. It pulls in `mkcert` and every Python
+runtime dependency as part of the same isolated global environment and
+exposes `pca` on `~/.pixi/bin` — verified live: `pca init`/`pca
+issue`/`pca status` all work correctly from a totally fresh global install,
+with no separate `pixi run`/wrapper script needed. `~/.pixi/bin` needs to be
+on `PATH`, which `pixi-completion`/`pixi init`'s shell setup already does
+for most users.
+
+If you'd rather not touch your global pixi environment, the fallback is a
+one-line wrapper script that delegates to `pixi run --manifest-path` against
+a clone of this repo instead:
 
 ```bash
 mkdir -p ~/.local/bin
@@ -59,15 +70,6 @@ exec pixi run --manifest-path "$HOME/src/personal-certificate-authority" pca "$@
 EOF
 chmod +x ~/.local/bin/pca
 ```
-
-(`~/.local/bin` is on `PATH` by default on most Linux distros; adjust the
-clone path to wherever you keep it.) This resolves cleanly — inside the
-`pixi run` invocation, pixi's own environment activation puts its managed
-`pca` first on `PATH`, so the wrapper doesn't call itself. Verified live:
-`command -v pca` finds the shim, and `pca status` runs correctly through it.
-
-Adding proper `pixi global install`/conda-forge packaging so this isn't
-necessary is tracked as follow-up work, not done yet.
 
 ## For other Fileglancer apps (or any local service)
 
