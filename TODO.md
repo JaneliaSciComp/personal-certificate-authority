@@ -40,3 +40,29 @@ architecture, losing the end-to-end-to-the-backend property this project is
 for) or "run a persistent `acme_server` and give every consumer its own ACME
 client" (real moving parts vs. mkcert's one-shot synchronous file output).
 Neither fits this project's no-daemon, one-shot-CLI shape.
+
+## Make `pca` installable via `pixi global install`/conda-forge
+
+**Status:** deferred — a manual wrapper-script workaround exists and is
+documented (`docs/Integration.md`, "Getting `pca` itself onto PATH").
+
+**Context:** this project isn't published anywhere, and `pixi global
+install --path`/`--git` fails against it as-is ("the pyproject.toml does not
+describe a package") because it's a plain hatchling/pip package, not built
+with pixi's newer package/build system (`[tool.pixi.package]` + a
+pixi-build backend). `pip install`/`pipx install` do work, but need
+Python ≥3.12 as the installing interpreter, which isn't every host's system
+default.
+
+This matters beyond convenience: every "if `pca` is on PATH, use it"
+integration (see `docs/CaddyIntegration.md`, and the
+`marimo_ai_sandbox`/`janelia-mojo-sandbox` PRs) silently no-ops until
+`pca` is actually reachable on `PATH`, and today that requires each host to
+set up the wrapper-script shim by hand.
+
+**If this friction turns out to matter in practice** (multiple hosts/users
+needing the shim), consider either adding pixi-build packaging to this repo
+so `pixi global install --git .../personal-certificate-authority` works
+natively, or publishing to conda-forge properly (heavier, but would also let
+`fileglancer`'s own `pyproject.toml` declare `pca` as a normal dependency
+instead of every consumer reinventing the `command -v pca` check).

@@ -67,7 +67,11 @@ above) are all exposed as launchable entry points.
 See [`docs/Integration.md`](docs/Integration.md) for how other Fileglancer
 apps (or any local service) should issue and reuse a cert from this CA, and
 how agents/automated scripts should do the same instead of minting one-off,
-untrusted self-signed certificates.
+untrusted self-signed certificates. If the app in question uses
+[Caddy](https://caddyserver.com/) as its own local reverse proxy/TLS
+terminator (rather than terminating TLS itself), see
+[`docs/CaddyIntegration.md`](docs/CaddyIntegration.md) instead — includes
+worked examples of the exact change against two real apps.
 
 ## Development
 

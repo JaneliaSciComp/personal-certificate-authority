@@ -34,6 +34,41 @@ shared/NFS home directories is the same across compute nodes — a cert issued
 while a job ran on one node is still there (and still trusted) when the same
 named job runs on a different node later.
 
+### Getting `pca` itself onto `PATH`
+
+This project isn't published to PyPI or conda-forge, and `pixi global
+install --path`/`--git` doesn't work against it as-is — that command needs a
+project built with pixi's newer package/build system (a `[tool.pixi.package]`
+section plus a pixi-build backend), and this repo is a plain
+hatchling/pip-installable package instead (verified directly: `pixi global
+install --path <this-repo>` fails with "the pyproject.toml does not describe
+a package"). A plain `pip install`/`pipx install` of this repo does work, but
+requires Python ≥3.12 as the interpreter doing the installing, which isn't
+the system default on every host.
+
+The simplest thing that works today without any of that — and what makes
+`command -v pca` succeed for the "when available" integrations below — is a
+one-line wrapper script on `PATH` that delegates to `pixi run
+--manifest-path` against a clone of this repo, e.g.:
+
+```bash
+mkdir -p ~/.local/bin
+cat > ~/.local/bin/pca <<'EOF'
+#!/usr/bin/env bash
+exec pixi run --manifest-path "$HOME/src/personal-certificate-authority" pca "$@"
+EOF
+chmod +x ~/.local/bin/pca
+```
+
+(`~/.local/bin` is on `PATH` by default on most Linux distros; adjust the
+clone path to wherever you keep it.) This resolves cleanly — inside the
+`pixi run` invocation, pixi's own environment activation puts its managed
+`pca` first on `PATH`, so the wrapper doesn't call itself. Verified live:
+`command -v pca` finds the shim, and `pca status` runs correctly through it.
+
+Adding proper `pixi global install`/conda-forge packaging so this isn't
+necessary is tracked as follow-up work, not done yet.
+
 ## For other Fileglancer apps (or any local service)
 
 1. **Pick one stable `--name`** for the service — typically the app's own
@@ -85,6 +120,12 @@ named job runs on a different node later.
 
    or pass it directly, e.g. `httpx.Client(verify=SSL_CERT_FILE)` /
    `requests.get(url, verify=SSL_CERT_FILE)`.
+
+If the app terminates TLS via [Caddy](https://caddyserver.com/) as a local
+reverse proxy instead of directly (e.g. fronting a backend with no TLS
+support of its own, like a notebook server or a web terminal), see
+[`CaddyIntegration.md`](CaddyIntegration.md) for that specific pattern
+instead of steps 2–3 above.
 
 ### As a Fileglancer App
 
