@@ -17,16 +17,19 @@ This project adds:
   root CA certificate plus OS/browser-specific trust instructions — useful
   when this tool runs on a remote host (e.g. a compute cluster node) but
   your browser is on your own laptop, where `mkcert -install` can't reach
-  your local trust store automatically.
+  your local trust store automatically. It creates the root CA itself on
+  first visit if one doesn't exist yet, so `pca serve` alone is enough to
+  get started — no separate `pca init` required first.
 
 ## Quick start
 
 ```bash
 pixi install
-pixi run pca init                                    # create + install the root CA
+pixi run pca serve                                    # http://127.0.0.1:8990 — creates the root CA on first visit
 pixi run pca issue --name myapp --san localhost       # issue a server cert
-pixi run pca serve                                    # http://127.0.0.1:8990 — download + trust instructions
 ```
+
+(Or run `pca init` yourself first if you're not going to use the web UI.)
 
 Point any app's `--ssl-keyfile`/`--ssl-certfile` flags (e.g. Fileglancer's
 `fileglancer start`) at the files printed by `pca issue`.

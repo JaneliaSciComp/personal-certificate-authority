@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Personal Certificate Authority</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 40rem; margin: 4rem auto; padding: 0 1rem; color: #222; }
+    code { background: #eee; padding: 0.15rem 0.4rem; border-radius: 4px; }
+    pre { background: #1e1e1e; color: #eee; padding: 0.75rem; border-radius: 6px; overflow-x: auto; white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+  <h1>Can't create a root CA</h1>
+  <p>This page tries to create a root CA automatically on first visit, but
+  that requires the <code>mkcert</code> binary, which isn't available here:</p>
+  <pre>{{ error }}</pre>
+  <p>Fix the environment (e.g. run this inside the project's pixi
+  environment: <code>pixi run pca serve</code>) and reload this page.</p>
+</body>
+</html>

@@ -15,10 +15,20 @@
     summary { font-weight: 600; cursor: pointer; }
     pre { background: #1e1e1e; color: #eee; padding: 0.75rem; border-radius: 6px; overflow-x: auto; }
     code { font-family: monospace; }
+    .banner { border: 1px solid #86efac; background: #f0fdf4; color: #14532d; border-radius: 6px; padding: 0.6rem 1rem; margin-bottom: 1.5rem; }
   </style>
 </head>
 <body>
   <h1>Trust the Personal Certificate Authority</h1>
+
+  {% if just_initialized %}
+  <div class="banner">
+    A root CA didn't exist yet, so one was just created for you (equivalent
+    to running <code>pca init</code>). It's already installed in this
+    machine's local trust store(s) where possible &mdash; the steps below
+    are only needed to trust it on a <em>different</em> machine.
+  </div>
+  {% endif %}
 
   <div class="card">
     <dl>
