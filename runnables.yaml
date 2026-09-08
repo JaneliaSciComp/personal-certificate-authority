@@ -1,0 +1,114 @@
+name: Personal Certificate Authority
+description: >
+  Create a personal root CA and issue local TLS certificates (built on
+  mkcert), with a web page to download the CA certificate and trust it on
+  another machine.
+requirements:
+  - pixi
+
+runnables:
+  - id: serve
+    name: Certificate Authority Web UI
+    type: service
+    description: >
+      Start the web app with CA info, a certificate download link, and
+      OS/browser trust instructions.
+    command: pixi run pca serve --host 0.0.0.0 --port $FG_SERVICE_PORT
+    auto_url: true
+
+  - id: init
+    name: Initialize Root CA
+    type: job
+    description: >
+      Create (if needed) and install the personal root CA. Safe to run
+      again; use "Force" to regenerate and invalidate previously issued
+      certificates.
+    command: pixi run pca init
+    parameters:
+      - flag: --force
+        name: Force
+        type: boolean
+        default: false
+        description: Regenerate the root CA, invalidating all issued certificates.
+
+  - id: issue
+    name: Issue Certificate
+    type: job
+    description: Issue (or reuse) a server TLS certificate signed by the personal CA.
+    command: pixi run pca issue
+    parameters:
+      - flag: --name
+        name: Certificate Name
+        type: string
+        required: true
+        description: Name to store the issued certificate under.
+      - flag: --san
+        name: Additional Hostname (SAN)
+        type: string
+        required: false
+        description: >
+          Extra hostname or IP address to include as a Subject Alternative
+          Name, in addition to the defaults (localhost, 127.0.0.1, ::1).
+      - flag: --force
+        name: Force
+        type: boolean
+        default: false
+        description: Reissue even if a valid certificate already exists.
+
+  - id: renew
+    name: Renew Certificate
+    type: job
+    description: Reissue an existing certificate (equivalent to Issue with Force).
+    command: pixi run pca renew
+    parameters:
+      - flag: --name
+        name: Certificate Name
+        type: string
+        required: true
+        description: Name of the certificate to renew.
+
+  - id: list
+    name: List Certificates
+    type: job
+    description: List issued leaf certificates and their expiry status.
+    command: pixi run pca list
+
+  - id: show
+    name: Show Certificate
+    type: job
+    description: Show details (fingerprint, expiry, SANs) about one issued certificate.
+    command: pixi run pca show
+    parameters:
+      - flag: --name
+        name: Certificate Name
+        type: string
+        required: true
+        description: Name of the certificate to show.
+
+  - id: revoke
+    name: Revoke Certificate
+    type: job
+    description: >
+      Delete an issued certificate's files. Does not revoke trust; if a
+      private key was compromised, regenerate the root CA instead.
+    command: pixi run pca revoke
+    parameters:
+      - flag: --name
+        name: Certificate Name
+        type: string
+        required: true
+        description: Name of the certificate to delete.
+
+  - id: trust
+    name: Trust Instructions
+    type: job
+    description: >
+      Print instructions for trusting the root CA on another machine (e.g.
+      your laptop, when the CA runs on a remote/headless host).
+    command: pixi run pca trust
+
+  - id: status
+    name: Status
+    type: job
+    description: Show root CA status and a summary of issued certificates.
+    command: pixi run pca status

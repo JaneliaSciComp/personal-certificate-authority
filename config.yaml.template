@@ -1,0 +1,13 @@
+# Copy to ~/.config/personal-certificate-authority/config.yaml to override
+# defaults. All keys can also be set via PCA_<KEY> environment variables.
+
+# log_level: INFO
+# data_dir: /home/you/.local/share/personal-certificate-authority
+# config_dir: /home/you/.config/personal-certificate-authority
+# mkcert_binary: mkcert
+# default_sans:
+#   - localhost
+#   - 127.0.0.1
+#   - "::1"
+# web_host: 127.0.0.1
+# web_port: 8990

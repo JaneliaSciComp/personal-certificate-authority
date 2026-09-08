@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Personal Certificate Authority</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 40rem; margin: 2rem auto; padding: 0 1rem; color: #222; }
+    h1 { font-size: 1.4rem; }
+    .card { border: 1px solid #ddd; border-radius: 8px; padding: 1rem 1.25rem; margin-bottom: 1.5rem; background: #fafafa; }
+    dt { font-weight: 600; }
+    dd { margin: 0 0 0.5rem 0; font-family: monospace; }
+    .download-btn { display: inline-block; padding: 0.6rem 1.2rem; background: #2563eb; color: white; text-decoration: none; border-radius: 6px; font-weight: 600; }
+    .download-btn:hover { background: #1d4ed8; }
+    details { border: 1px solid #ddd; border-radius: 6px; margin-bottom: 0.5rem; padding: 0.5rem 1rem; }
+    summary { font-weight: 600; cursor: pointer; }
+    pre { background: #1e1e1e; color: #eee; padding: 0.75rem; border-radius: 6px; overflow-x: auto; }
+    code { font-family: monospace; }
+  </style>
+</head>
+<body>
+  <h1>Trust the Personal Certificate Authority</h1>
+
+  <div class="card">
+    <dl>
+      <dt>Common name</dt><dd>{{ common_name }}</dd>
+      <dt>SHA-256 fingerprint</dt><dd>{{ fingerprint }}</dd>
+      <dt>Valid until</dt><dd>{{ not_valid_after }}</dd>
+    </dl>
+    <a class="download-btn" href="/download/rootCA.pem">Download CA Certificate</a>
+  </div>
+
+  <p>
+    If you're viewing this page from the same machine this app is running on,
+    trust is usually already installed (<code>pca init</code> runs
+    <code>mkcert -install</code> automatically). These steps are for
+    <strong>trusting the CA on a different machine</strong> — e.g. your
+    laptop's browser, when this app runs on a remote server.
+  </p>
+
+  <details open>
+    <summary>Windows</summary>
+    <p>Double-click the downloaded certificate file, choose "Local Machine",
+    then place it in the "Trusted Root Certification Authorities" store.</p>
+  </details>
+
+  <details>
+    <summary>macOS</summary>
+    <p>Open the downloaded file in Keychain Access, add it to the "System"
+    keychain, then double-click it, expand "Trust", and set "When using this
+    certificate" to "Always Trust".</p>
+  </details>
+
+  <details>
+    <summary>Linux (system-wide)</summary>
+    <pre>sudo cp rootCA.pem /etc/pki/ca-trust/source/anchors/personal-ca.pem
+sudo update-ca-trust extract
+
+# Debian/Ubuntu instead:
+sudo cp rootCA.pem /usr/local/share/ca-certificates/personal-ca.crt
+sudo update-ca-certificates</pre>
+  </details>
+
+  <details>
+    <summary>Firefox / Chrome (Linux, NSS database)</summary>
+    <pre>certutil -d sql:$HOME/.pki/nssdb -A -t "C,," -n "Personal CA" -i rootCA.pem</pre>
+    <p>Requires the <code>certutil</code> tool (package <code>libnss3-tools</code>
+    on Debian/Ubuntu or <code>nss-tools</code> on Fedora/RHEL).</p>
+  </details>
+
+  <details>
+    <summary>Command-line tools (curl, Python requests, Node.js)</summary>
+    <pre>export SSL_CERT_FILE=/path/to/rootCA.pem
+export REQUESTS_CA_BUNDLE=/path/to/rootCA.pem
+export NODE_EXTRA_CA_CERTS=/path/to/rootCA.pem</pre>
+  </details>
+</body>
+</html>
