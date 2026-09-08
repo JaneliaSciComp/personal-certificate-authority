@@ -78,13 +78,25 @@ def cli(log_level: str | None):
         "omit this flag to skip it entirely."
     ),
 )
-def init(force: bool, system_trust: bool):
+@click.option(
+    "--common-name",
+    default=None,
+    help=(
+        "CommonName for the root CA's subject (e.g. your email address). "
+        "Only used the first time the CA is created (or when combined "
+        "with --force); defaults to `git config user.email`, then $EMAIL, "
+        "then <user>@<hostname>."
+    ),
+)
+def init(force: bool, system_trust: bool, common_name: str | None):
     """Create (if needed) and install the personal root CA.
 
     By default, only installs into browser (NSS) trust stores -- never
     invokes sudo. Pass --system-trust to also attempt OS-wide trust.
     """
     settings = get_settings()
+    if common_name:
+        settings.root_ca_common_name = common_name
     mkcert_wrapper.init(settings, force=force, system_trust=system_trust)
     cert_file, _ = store.root_ca_paths(settings)
     info = certinfo.read_cert(cert_file)

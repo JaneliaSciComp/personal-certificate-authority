@@ -43,6 +43,14 @@ class Settings(BaseSettings):
     # the box for the common local-dev case.
     default_sans: List[str] = ["localhost", "127.0.0.1", "::1"]
 
+    # Root CA Subject/Issuer CommonName override. mkcert hardcodes this to
+    # "mkcert <user>@<hostname>" with no way to change it, so if this is
+    # unset, personal_certificate_authority.ca generates the root CA itself
+    # (mkcert doesn't care who created rootCA.pem/rootCA-key.pem) and
+    # resolves a default via `git config user.email` / $EMAIL / falling
+    # back to mkcert's own user@hostname format -- see ca.detect_common_name.
+    root_ca_common_name: Optional[str] = None
+
     web_host: str = "127.0.0.1"
     web_port: int = 8990
 
